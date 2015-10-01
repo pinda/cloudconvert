@@ -48,10 +48,12 @@ type StatusConverter struct {
 }
 
 type ConversionInput struct {
-	Input        string `json:"input"`
-	File         string `json:"file"`
-	Filename     string `json:"filename"`
-	OutputFormat string `json:"outputformat"`
+	Input            string            `json:"input"`
+	File             string            `json:"file"`
+	Filename         string            `json:"filename,omitempty"`
+	OutputFormat     string            `json:"outputformat"`
+	ConverterOptions map[string]string `json:"converteroptions,omitempty"`
+	Output           map[string]string `json:"output,omitempty"`
 }
 
 type S3Credentials struct {
@@ -67,10 +69,42 @@ type Credentials struct {
 }
 
 type S3ConversionInput struct {
-	Input        Credentials `json:"input"`
-	File         string      `json:"file"`
-	OutputFormat string      `json:"outputformat"`
-	Output       Credentials `json:"output"`
+	Input            Credentials       `json:"input"`
+	File             string            `json:"file"`
+	OutputFormat     string            `json:"outputformat"`
+	Output           Credentials       `json:"output"`
+	ConverterOptions map[string]string `json:"converteroptions,omitempty"`
+}
+
+func NewS3Conversion(key, secret, path, bucketIn, bucketOut, acl string) S3ConversionInput {
+	if bucketOut == "" {
+		bucketOut = bucketIn
+	}
+	s3input := S3Credentials{
+		AccessKeyID:     key,
+		SecretAccessKey: secret,
+		Bucket:          bucketIn,
+	}
+	s3output := S3Credentials{
+		AccessKeyID:     key,
+		SecretAccessKey: secret,
+		Bucket:          bucketOut,
+		Path:            path,
+		ACL:             acl,
+	}
+	return S3ConversionInput{
+		Input:  Credentials{Credentials: s3input},
+		Output: Credentials{Credentials: s3output},
+	}
+}
+
+func NewConversion(input, path, filename, output string) ConversionInput {
+	return ConversionInput{
+		Input:        input,
+		File:         path,
+		Filename:     filename,
+		OutputFormat: output,
+	}
 }
 
 func (s *ConversionService) New(url string, con ConversionInput) (*Conversion, error) {
